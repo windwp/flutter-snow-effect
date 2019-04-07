@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:proximity_plugin/proximity_plugin.dart';
 
 class SnowWidget extends StatefulWidget {
   final int totalSnow;
@@ -26,7 +25,7 @@ class _SnowWidgetState extends State<SnowWidget>
   @override
   void initState() {
     super.initState();
-    this.init();
+    init();
   }
 
   init() {
@@ -50,15 +49,11 @@ class _SnowWidgetState extends State<SnowWidget>
     } else {
       controller.repeat();
     }
-
-    proximityEvents.listen((ProximityEvent event) {
-      print(event);
-    });
   }
 
   @override
   dispose() {
-    controller.stop();
+    controller.dispose();
     super.dispose();
   }
 
@@ -74,8 +69,9 @@ class _SnowWidgetState extends State<SnowWidget>
   }
 
   update() {
+    print(" update" + widget.isRunning.toString());
     angle += 0.01;
-    if (widget.totalSnow != _snows.length) {
+    if (_snows == null || widget.totalSnow != _snows.length) {
       _createSnow();
     }
     for (var i = 0; i < widget.totalSnow; i++) {
@@ -83,8 +79,8 @@ class _SnowWidgetState extends State<SnowWidget>
       //We will add 1 to the cos function to prevent negative values which will lead flakes to move upwards
       //Every particle has its own density which can be used to make the downward movement different for each flake
       //Lets make it more random by adding in the radius
-      snow.y += cos(angle + snow.d) + widget.speed + snow.r / 2;
-      snow.x += sin(angle) * 2;
+      snow.y += (cos(angle + snow.d) + 1 + snow.r / 2) * widget.speed;
+      snow.x += sin(angle) * 2 * widget.speed;
       if (snow.x > W + 5 || snow.x < -5 || snow.y > H) {
         if (i % 3 > 0) {
           //66.67% of the flakes
@@ -108,20 +104,27 @@ class _SnowWidgetState extends State<SnowWidget>
 
   @override
   Widget build(BuildContext context) {
-    if (_snows == null) {
-      W = MediaQuery.of(context).size.width;
-      H = MediaQuery.of(context).size.height;
-      _createSnow();
+    if (widget.isRunning && !controller.isAnimating) {
+      controller.repeat();
+    } else if (!widget.isRunning && controller.isAnimating) {
+      controller.stop();
     }
-    return Container(
-      child: CustomPaint(
-        willChange: widget.isRunning,
-        painter: SnowPainter(
-            progress: controller.value,
-            isRunning: widget.isRunning,
-            snows: _snows),
-        size: Size.infinite,
-      ),
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (_snows == null) {
+          W = constraints.maxWidth;
+          H = constraints.maxHeight;
+        }
+        return CustomPaint(
+          willChange: widget.isRunning,
+          painter: SnowPainter(
+              // progress: controller.value,
+              isRunning: widget.isRunning,
+              snows: _snows),
+          size: Size.infinite,
+        );
+      },
     );
   }
 }
@@ -137,13 +140,12 @@ class Snow {
 class SnowPainter extends CustomPainter {
   List<Snow> snows;
   bool isRunning;
-  double progress = 0;
 
-  SnowPainter({this.progress, this.isRunning, this.snows});
+  SnowPainter({this.isRunning, this.snows});
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (snows == null) return;
+    if (snows == null || !isRunning) return;
     //draw circle
     final Paint paint = new Paint()
       ..color = Colors.white
@@ -158,6 +160,5 @@ class SnowPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(SnowPainter oldDelegate) =>
-      oldDelegate.progress != progress && isRunning;
+  bool shouldRepaint(SnowPainter oldDelegate) => isRunning;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snow_effect/snow-animation.dart';
 
 void main() => runApp(MyApp());
 
@@ -45,12 +46,12 @@ class _MyHomePageState extends State<MyHomePage>
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height),
           Container(
-              // child: SnowWidget(
-              //   isRunning: _isRunning,
-              //   totalSnow: 30,
-              //   speed: 1.1,
-              // ),
-              ),
+            child: SnowWidget(
+              isRunning: _isRunning,
+              totalSnow: 150,
+              speed: 1,
+            ),
+          ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
